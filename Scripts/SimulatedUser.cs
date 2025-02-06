@@ -7,6 +7,7 @@ namespace UserInTheBox
     {
         public Transform leftHandController, rightHandController;
         public Camera mainCamera;
+        public AudioListener audioListener;
         public RLEnv env;
         private ZmqServer _server;
         private string _port;
@@ -41,8 +42,10 @@ namespace UserInTheBox
                     mainCamera.GetComponent<TrackedPoseDriver>().enabled = false;
                 }
 
-                // Add AudioListener component
-                _audioListener = gameObject.AddComponent<AudioListener>();
+                // Change the parent of the audio listener to be the main camera, and set its position to (0,0,0) relative to the camera
+                audioListener.transform.SetParent(mainCamera.transform);
+                audioListener.transform.localPosition = Vector3.zero;
+
             }
             else
             {
