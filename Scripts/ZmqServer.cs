@@ -38,13 +38,13 @@ namespace UserInTheBox
         public bool isFinished;
         public float reward;
         public byte[] image;
+        public byte[] audio;  // new field for audio data
         public float timeFeature;
-        // public Dictionary<string, float> logDict;
-        public string logDict;  //json dict
+        public string logDict;  // json dict
     }
 
- [Serializable]
- public class SerializableKeyValuePair<TKey, TValue>
+    [Serializable]
+    public class SerializableKeyValuePair<TKey, TValue>
     {
         public SerializableKeyValuePair()
         {
@@ -65,7 +65,7 @@ namespace UserInTheBox
         private Observation _gameObservation;
         private TimeOptions _timeOptions;
         private int _timeOutSeconds;
-        
+
         public ZmqServer(string port, int timeOutSeconds)
         {
             Debug.Log("Starting up ZMQ server at tcp://localhost:" + port);
@@ -83,7 +83,7 @@ namespace UserInTheBox
                 NetMQConfig.Cleanup(false);
             }
         }
-        
+
         ~ZmqServer()
         {
             Close();
@@ -93,51 +93,51 @@ namespace UserInTheBox
         {
             // Receive the message and save it into _simulationState
             Receive(out _simulationState);
-            
+
             // Return the parsed state
             return _simulationState;
         }
-        
+
         private void Receive<TMessage>(out TMessage state)
         {
-            // Receive message as string  
+            // Receive message as string
             string strMessage;
             var success = _socket.TryReceiveFrameString(TimeSpan.FromSeconds(_timeOutSeconds), out strMessage);
-            
+
             // If we time out, shut down
             if (!success)
             {
                 Debug.Log("Server timed out, no message received");
                 Application.Quit();
             }
-            
+
             // Parse string into an object and save into 'state'
             state = JsonUtility.FromJson<TMessage>(strMessage);
         }
 
-        public void SendObservation(bool isFinished, float reward, byte[] image, float timeFeature, Dictionary<string, object> logDict)
+        public void SendObservation(bool isFinished, float reward, byte[] image, byte[] audio, float timeFeature, Dictionary<string, object> logDict)
         {
             // Populate reply
             _gameObservation.isFinished = isFinished;
             _gameObservation.reward = reward;
             _gameObservation.image = image;
+            _gameObservation.audio = audio;  // set audio data
             _gameObservation.timeFeature = timeFeature;
-
             _gameObservation.logDict = JsonConvert.SerializeObject(logDict);
 
             // Send to User-in-the-Box simulation in MuJoCo
             _socket.SendFrame(JsonUtility.ToJson(_gameObservation));
         }
-        
+
         public TimeOptions WaitForHandshake()
         {
             Debug.Log("Waiting for User-in-the-Box to confirm connection");
             // Receive time options from User-in-the-Box
             Receive(out _timeOptions);
             Debug.Log("Connection confirmed");
-            
+
             // Send an empty message to confirm connection
-            SendObservation(false, 0, null, -1, null);
+            SendObservation(false, 0, null, null, -1, null);
 
             return _timeOptions;
         }
