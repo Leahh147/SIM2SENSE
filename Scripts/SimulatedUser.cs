@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem.XR;
+using WhacAMole.Scripts.Audio;
 
 namespace UserInTheBox
 {
@@ -8,6 +9,7 @@ namespace UserInTheBox
         public Transform leftHandController, rightHandController;
         public Camera mainCamera;
         public AudioListener audioListener;
+        public AudioSensorComponent audioSensorComponent;
         public RLEnv env;
         private ZmqServer _server;
         private string _port;
@@ -18,11 +20,7 @@ namespace UserInTheBox
         private bool _sendReply;
         private byte[] _previousImage;
         [SerializeField] private bool simulated;
-
-        private AudioListener _audioListener;
         private float[] _audioData;
-        private int _sampleRate = 44100; // Example sample rate
-
         public void Awake()
         {
             _port = UitBUtils.GetOptionalKeywordArgument("port", "5555");
@@ -51,6 +49,8 @@ namespace UserInTheBox
             {
                 gameObject.SetActive(false);
             }
+
+            audioSensorComponent.CreateSensors();
         }
 
         public void Start()
@@ -73,6 +73,8 @@ namespace UserInTheBox
             _lightMap.name = "stupid_hack";
             _lightMap.enableRandomWrite = true;
             _lightMap.Create();
+
+            audioSensorComponent.OnValidate();
         }
 
         public void Update()
@@ -99,6 +101,7 @@ namespace UserInTheBox
             else if (state.reset)
             {
                 env.Reset();
+                audioSensorComponent.OnSensorReset();
             }
         }
 
@@ -129,13 +132,8 @@ namespace UserInTheBox
             RenderTexture.active = null;
             _previousImage = _tex.EncodeToPNG();
 
-            // Capture audio data
-            _audioData = new float[_sampleRate];
-            AudioListener.GetOutputData(_audioData, 0);
-
-            // Convert audio data to byte array
-            byte[] audioBytes = new byte[_audioData.Length * sizeof(float)];
-            Buffer.BlockCopy(_audioData, 0, audioBytes, 0, audioBytes.Length);
+            var samples2D = audioSensorComponent.Sensor.Buffer.Samples;
+            _audioData = samples2D.Flatten();
 
             var reward = env.GetReward();
             var isFinished = env.IsFinished() || _server.GetSimulationState().isFinished;
@@ -143,11 +141,12 @@ namespace UserInTheBox
             var logDict = env.GetLogDict();
 
             // Send observation to client with audio data
-            _server.SendObservation(isFinished, reward, _previousImage, audioBytes, timeFeature, logDict);
+            _server.SendObservation(isFinished, reward, _previousImage, _audioData, timeFeature, logDict);
         }
 
         private void OnDestroy()
-        {
+        {   
+            audioSensorComponent.OnDestroy();
             _server?.Close();
         }
 

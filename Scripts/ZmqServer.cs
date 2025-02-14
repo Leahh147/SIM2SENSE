@@ -38,7 +38,7 @@ namespace UserInTheBox
         public bool isFinished;
         public float reward;
         public byte[] image;
-        public byte[] audio;  // new field for audio data
+        public float[] audio;  // new field for audio data
         public float timeFeature;
         public string logDict;  // json dict
     }
@@ -115,7 +115,7 @@ namespace UserInTheBox
             state = JsonUtility.FromJson<TMessage>(strMessage);
         }
 
-        public void SendObservation(bool isFinished, float reward, byte[] image, byte[] audio, float timeFeature, Dictionary<string, object> logDict)
+        public void SendObservation(bool isFinished, float reward, byte[] image, float[] audio, float timeFeature, Dictionary<string, object> logDict)
         {
             // Populate reply
             _gameObservation.isFinished = isFinished;
