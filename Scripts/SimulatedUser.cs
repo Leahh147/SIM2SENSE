@@ -75,6 +75,7 @@ namespace UserInTheBox
             _lightMap.Create();
 
             audioSensorComponent.OnValidate();
+            // InvokeRepeating("AudioSampling", 0, (float)0.02); // call sampling function at 48kHz, but the function actually samples at 48kHz already
         }
 
         public void Update()
@@ -117,7 +118,7 @@ namespace UserInTheBox
             }
         }
 
-        public void LateUpdate()
+        public void LateUpdate() // 20Hz
         {
             if (!_sendReply)
             {
@@ -131,6 +132,7 @@ namespace UserInTheBox
             _tex.ReadPixels(_rect, 0, 0);
             RenderTexture.active = null;
             _previousImage = _tex.EncodeToPNG();
+            AudioSampling();
 
             var samples2D = audioSensorComponent.Sensor.Buffer.Samples;
             _audioData = samples2D.Flatten();
@@ -144,6 +146,10 @@ namespace UserInTheBox
             _server.SendObservation(isFinished, reward, _previousImage, _audioData, timeFeature, logDict);
         }
 
+        public void AudioSampling()
+        {
+            audioSensorComponent.SampleAudioinSimulatedUser();
+        }
         private void OnDestroy()
         {   
             audioSensorComponent.OnDestroy();
