@@ -121,7 +121,7 @@ namespace UserInTheBox
             _gameObservation.isFinished = isFinished;
             _gameObservation.reward = reward;
             _gameObservation.image = image;
-            _gameObservation.audio = audio;  // set audio data
+            _gameObservation.audio = audio;
             _gameObservation.timeFeature = timeFeature;
             _gameObservation.logDict = JsonConvert.SerializeObject(logDict);
 

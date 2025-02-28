@@ -9,7 +9,8 @@ namespace UserInTheBox
         public Transform leftHandController, rightHandController;
         public Camera mainCamera;
         public AudioListener audioListener;
-        public AudioSensorComponent audioSensorComponent;
+        public bool audioModeOn = false;
+        public AudioManager audioManager;
         public RLEnv env;
         private ZmqServer _server;
         private string _port;
@@ -50,7 +51,7 @@ namespace UserInTheBox
                 gameObject.SetActive(false);
             }
 
-            audioSensorComponent.CreateSensors();
+            audioManager.m_AudioSensorComponent.CreateSensors();
         }
 
         public void Start()
@@ -73,9 +74,6 @@ namespace UserInTheBox
             _lightMap.name = "stupid_hack";
             _lightMap.enableRandomWrite = true;
             _lightMap.Create();
-
-            audioSensorComponent.OnValidate();
-            // InvokeRepeating("AudioSampling", 0, (float)0.02); // call sampling function at 48kHz, but the function actually samples at 48kHz already
         }
 
         public void Update()
@@ -102,7 +100,7 @@ namespace UserInTheBox
             else if (state.reset)
             {
                 env.Reset();
-                audioSensorComponent.OnSensorReset();
+                audioManager.m_AudioSensorComponent.OnSensorReset();
             }
         }
 
@@ -117,7 +115,6 @@ namespace UserInTheBox
                 mainCamera.transform.rotation = env.simulatedUserHeadsetOrientation;
             }
         }
-
         public void LateUpdate() // 20Hz
         {
             if (!_sendReply)
@@ -134,7 +131,8 @@ namespace UserInTheBox
             _previousImage = _tex.EncodeToPNG();
             AudioSampling();
 
-            var samples2D = audioSensorComponent.Sensor.Buffer.Samples;
+            var samples2D = audioManager.m_AudioSensorComponent.Sensor.Buffer.Samples;
+            
             _audioData = samples2D.Flatten();
 
             var reward = env.GetReward();
@@ -148,11 +146,11 @@ namespace UserInTheBox
 
         public void AudioSampling()
         {
-            audioSensorComponent.SampleAudioinSimulatedUser();
+            audioManager.m_AudioSensorComponent.SampleAudioinSimulatedUser();
         }
         private void OnDestroy()
         {   
-            audioSensorComponent.OnDestroy();
+            audioManager.m_AudioSensorComponent.OnDestroy();
             _server?.Close();
         }
 
