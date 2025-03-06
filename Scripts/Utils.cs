@@ -10,6 +10,7 @@ namespace UserInTheBox
             // Get argName from command line arguments.
             // Throws an ArgumentException if argName is not found from command line arguments.
             var args = System.Environment.GetCommandLineArgs();
+            Debug.Log("args: " + args);
             for (int i = 0; i < args.Length; i++)
             {
                 if (args[i] == ("-" + argName) && (args.Length > i + 1))

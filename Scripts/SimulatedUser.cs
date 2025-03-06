@@ -53,21 +53,21 @@ namespace UserInTheBox
 
             audioManager.m_AudioSensorComponent.CreateSensors();
             // for pipeline purposes, I just set the args manually because the utils are not taking args properly
-            audioModeOn = true;
-            if (audioModeOn) {
-                audioManager.SignalType = "Mono";
-                audioManager.SampleType = "Amplitude";
-                Debug.Log("Audio mode on, using signal type " + audioManager.SignalType + " and sample type " + audioManager.SampleType);
-            }
-            // string audioKeyword = UitBUtils.GetOptionalKeywordArgument("audioModeOn", "false");
-            // audioModeOn = audioKeyword == "true" ? true : false;
+            // audioModeOn = true;
             // if (audioModeOn) {
-            //     string signalType_ = UitBUtils.GetOptionalKeywordArgument("signalType", "Mono");
-            //     string sampleType_ = UitBUtils.GetOptionalKeywordArgument("sampleType", "Amplitude");
-            //     audioManager.SignalType = signalType_;
-            //     audioManager.SampleType = sampleType_;
+            //     audioManager.SignalType = "Mono";
+            //     audioManager.SampleType = "Amplitude";
             //     Debug.Log("Audio mode on, using signal type " + audioManager.SignalType + " and sample type " + audioManager.SampleType);
             // }
+            string audioKeyword = UitBUtils.GetKeywordArgument("audioModeOn");
+            audioModeOn = audioKeyword == "true" ? true : false;
+            if (audioModeOn) {
+                string signalType_ = UitBUtils.GetOptionalKeywordArgument("signalType", "Mono");
+                string sampleType_ = UitBUtils.GetOptionalKeywordArgument("sampleType", "Amplitude");
+                audioManager.SignalType = signalType_;
+                audioManager.SampleType = sampleType_;
+                Debug.Log("Audio mode on, using signal type " + audioManager.SignalType + " and sample type " + audioManager.SampleType);
+            }
 
         }
 
