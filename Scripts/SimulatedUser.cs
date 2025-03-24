@@ -59,6 +59,8 @@ namespace UserInTheBox
             //     audioManager.SampleType = "Amplitude";
             //     Debug.Log("Audio mode on, using signal type " + audioManager.SignalType + " and sample type " + audioManager.SampleType);
             // }
+
+            // comment the following lines if not using standalone application
             string audioKeyword = UitBUtils.GetKeywordArgument("audioModeOn");
             audioModeOn = audioKeyword == "true" ? true : false;
             if (audioModeOn) {
@@ -151,6 +153,7 @@ namespace UserInTheBox
             var samples2D = audioManager.m_AudioSensorComponent.Sensor.Buffer.Samples;
             
             _audioData = samples2D.Flatten();
+            Debug.Log("Audio data from unity side" + _audioData + "at time " + Time.time);
 
             var reward = env.GetReward();
             var isFinished = env.IsFinished() || _server.GetSimulationState().isFinished;
