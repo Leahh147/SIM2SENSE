@@ -68,9 +68,7 @@ namespace UserInTheBox
                 string sampleType_ = UitBUtils.GetOptionalKeywordArgument("sampleType", "Amplitude");
                 audioManager.SignalType = signalType_;
                 audioManager.SampleType = sampleType_;
-                Debug.Log("Audio mode on, using signal type " + audioManager.SignalType + " and sample type " + audioManager.SampleType);
             }
-
         }
 
         public void Start()
