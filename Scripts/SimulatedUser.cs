@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem.XR;
-using WhacAMole.Scripts.Audio;
+using VRBeats;
 
 namespace UserInTheBox
 {
