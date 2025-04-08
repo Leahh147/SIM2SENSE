@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using WhacAMole.Scripts.Audio;
+using TemporalTask.Audio;
 
 namespace UserInTheBox
 {

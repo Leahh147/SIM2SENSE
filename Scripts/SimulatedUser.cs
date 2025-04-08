@@ -1,17 +1,23 @@
 using UnityEngine;
 using UnityEngine.InputSystem.XR;
-using WhacAMole.Scripts.Audio;
+using System.Collections.Generic;
 
 namespace UserInTheBox
 {
+    /// <summary>
+    /// A simplified version of SimulatedUser for the temporal task
+    /// Only includes the essential components needed for the task
+    /// </summary>
     public class SimulatedUser : MonoBehaviour
     {
         public Transform leftHandController, rightHandController;
+        public Transform fingerTipTransform; // For direct interaction
         public Camera mainCamera;
         public AudioListener audioListener;
         public bool audioModeOn = false;
-        public AudioManager audioManager;
         public RLEnv env;
+        
+        // Server communication
         private ZmqServer _server;
         private string _port;
         private Rect _rect;
@@ -21,7 +27,12 @@ namespace UserInTheBox
         private bool _sendReply;
         private byte[] _previousImage;
         [SerializeField] private bool simulated;
+        
+        // Audio data
         private float[] _audioData;
+        private AudioSource _audioSource;
+        public AudioManager audioManager;
+        
         public void Awake()
         {
             _port = UitBUtils.GetOptionalKeywordArgument("port", "5555");
@@ -29,9 +40,9 @@ namespace UserInTheBox
 
             if (enabled)
             {
+                // Configure camera for simulation
                 mainCamera.enabled = false;
                 mainCamera.depthTextureMode = DepthTextureMode.Depth;
-                mainCamera.gameObject.AddComponent<RenderShader>();
                 mainCamera.fieldOfView = 90;
                 mainCamera.nearClipPlane = 0.01f;
                 mainCamera.farClipPlane = 10;
@@ -41,29 +52,35 @@ namespace UserInTheBox
                     mainCamera.GetComponent<TrackedPoseDriver>().enabled = false;
                 }
 
-                // Change the parent of the audio listener to be the main camera, and set its position to (0,0,0) relative to the camera
+                // Set up audio listener
                 audioListener.transform.SetParent(mainCamera.transform);
                 audioListener.transform.localPosition = Vector3.zero;
-
+                
+                // Set up audio source for sensing
+                _audioSource = GetComponent<AudioSource>();
+                if (_audioSource == null)
+                {
+                    _audioSource = gameObject.AddComponent<AudioSource>();
+                }
             }
             else
             {
                 gameObject.SetActive(false);
             }
 
-            audioManager.m_AudioSensorComponent.CreateSensors();
-            // for pipeline purposes, I just set the args manually because the utils are not taking args properly
-            // audioModeOn = true;
-            // if (audioModeOn) {
-            //     audioManager.SignalType = "Mono";
-            //     audioManager.SampleType = "Amplitude";
-            //     Debug.Log("Audio mode on, using signal type " + audioManager.SignalType + " and sample type " + audioManager.SampleType);
-            // }
-
-            // comment the following lines if not using standalone application
+            // Configure audio mode
             string audioKeyword = UitBUtils.GetKeywordArgument("audioModeOn");
-            audioModeOn = audioKeyword == "true" ? true : false;
+            audioModeOn = audioKeyword == "true";
+            
+            // Make sure fingertip transform is set
+            if (fingerTipTransform == null && rightHandController != null)
+            {
+                fingerTipTransform = rightHandController;
+                Debug.Log("Using right controller as fingertip transform");
+            }
+
             if (audioModeOn) {
+                audioManager.m_AudioSensorComponent.CreateSensors();
                 string signalType_ = UitBUtils.GetOptionalKeywordArgument("signalType", "Mono");
                 string sampleType_ = UitBUtils.GetOptionalKeywordArgument("sampleType", "Amplitude");
                 audioManager.SignalType = signalType_;
@@ -73,14 +90,18 @@ namespace UserInTheBox
 
         public void Start()
         {
+            // Set up ZMQ communication
             int timeOutSeconds = _port == "5555" ? 600 : 60;
             _server = new ZmqServer(_port, timeOutSeconds);
             var timeOptions = _server.WaitForHandshake();
+            
+            // Configure time settings
             Time.timeScale = timeOptions.timeScale;
             Application.targetFrameRate = timeOptions.sampleFrequency * (int)Time.timeScale;
             Time.fixedDeltaTime = timeOptions.fixedDeltaTime > 0 ? timeOptions.fixedDeltaTime : timeOptions.timestep;
             Time.maximumDeltaTime = 1.0f / Application.targetFrameRate;
 
+            // Set up rendering for observations
             Screen.SetResolution(1, 1, false);
             const int width = 120;
             const int height = 80;
@@ -88,7 +109,7 @@ namespace UserInTheBox
             _renderTexture = new RenderTexture(width, height, 16, RenderTextureFormat.ARGBHalf);
             _tex = new Texture2D(width, height, TextureFormat.RGBAHalf, false);
             _lightMap = new RenderTexture(width, height, 16);
-            _lightMap.name = "stupid_hack";
+            _lightMap.name = "light_map";
             _lightMap.enableRandomWrite = true;
             _lightMap.Create();
         }
@@ -151,7 +172,6 @@ namespace UserInTheBox
             var samples2D = audioManager.m_AudioSensorComponent.Sensor.Buffer.Samples;
             
             _audioData = samples2D.Flatten();
-            Debug.Log("Audio data from unity side" + _audioData + "at time " + Time.time);
 
             var reward = env.GetReward();
             var isFinished = env.IsFinished() || _server.GetSimulationState().isFinished;
