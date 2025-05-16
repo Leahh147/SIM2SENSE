@@ -11,7 +11,7 @@ namespace UserInTheBox
     public class SimulatedUser : MonoBehaviour
     {
         public Transform leftHandController, rightHandController;
-        public Transform fingerTipTransform; // For direct interaction
+        public Transform fingerTipTransform;
         public Camera mainCamera;
         public AudioListener audioListener;
         public bool audioModeOn = false;
@@ -67,10 +67,6 @@ namespace UserInTheBox
             {
                 gameObject.SetActive(false);
             }
-
-            // Configure audio mode
-            string audioKeyword = UitBUtils.GetKeywordArgument("audioModeOn");
-            audioModeOn = audioKeyword == "true";
             
             // Make sure fingertip transform is set
             if (fingerTipTransform == null && rightHandController != null)
@@ -79,8 +75,12 @@ namespace UserInTheBox
                 Debug.Log("Using right controller as fingertip transform");
             }
 
+            audioManager.m_AudioSensorComponent.CreateSensors();
+
+            // Comment the following lines if debugging
+            string audioKeyword = UitBUtils.GetKeywordArgument("audioModeOn");
+            audioModeOn = audioKeyword == "true";
             if (audioModeOn) {
-                audioManager.m_AudioSensorComponent.CreateSensors();
                 string signalType_ = UitBUtils.GetOptionalKeywordArgument("signalType", "Mono");
                 string sampleType_ = UitBUtils.GetOptionalKeywordArgument("sampleType", "Amplitude");
                 audioManager.SignalType = signalType_;
