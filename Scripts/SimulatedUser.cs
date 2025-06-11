@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem.XR;
+using WhacAMole.Scripts.Audio;
 
 namespace UserInTheBox
 {
@@ -7,6 +8,9 @@ namespace UserInTheBox
     {
         public Transform leftHandController, rightHandController;
         public Camera mainCamera;
+        public AudioListener audioListener;
+        public bool audioModeOn = false;
+        public AudioManager audioManager;
         public RLEnv env;
         private ZmqServer _server;
         private string _port;
@@ -17,11 +21,7 @@ namespace UserInTheBox
         private bool _sendReply;
         private byte[] _previousImage;
         [SerializeField] private bool simulated;
-
-        private AudioListener _audioListener;
         private float[] _audioData;
-        private int _sampleRate = 44100; // Example sample rate
-
         public void Awake()
         {
             _port = UitBUtils.GetOptionalKeywordArgument("port", "5555");
@@ -41,12 +41,33 @@ namespace UserInTheBox
                     mainCamera.GetComponent<TrackedPoseDriver>().enabled = false;
                 }
 
-                // Add AudioListener component
-                _audioListener = gameObject.AddComponent<AudioListener>();
+                // Change the parent of the audio listener to be the main camera, and set its position to (0,0,0) relative to the camera
+                audioListener.transform.SetParent(mainCamera.transform);
+                audioListener.transform.localPosition = Vector3.zero;
+
             }
             else
             {
                 gameObject.SetActive(false);
+            }
+
+            audioManager.m_AudioSensorComponent.CreateSensors();
+            // for pipeline purposes, I just set the args manually because the utils are not taking args properly
+            // audioModeOn = true;
+            // if (audioModeOn) {
+            //     audioManager.SignalType = "Mono";
+            //     audioManager.SampleType = "Amplitude";
+            //     Debug.Log("Audio mode on, using signal type " + audioManager.SignalType + " and sample type " + audioManager.SampleType);
+            // }
+
+            // comment the following lines if not using standalone application
+            string audioKeyword = UitBUtils.GetKeywordArgument("audioModeOn");
+            audioModeOn = audioKeyword == "true" ? true : false;
+            if (audioModeOn) {
+                string signalType_ = UitBUtils.GetOptionalKeywordArgument("signalType", "Mono");
+                string sampleType_ = UitBUtils.GetOptionalKeywordArgument("sampleType", "Amplitude");
+                audioManager.SignalType = signalType_;
+                audioManager.SampleType = sampleType_;
             }
         }
 
@@ -96,6 +117,7 @@ namespace UserInTheBox
             else if (state.reset)
             {
                 env.Reset();
+                audioManager.m_AudioSensorComponent.OnSensorReset();
             }
         }
 
@@ -110,8 +132,7 @@ namespace UserInTheBox
                 mainCamera.transform.rotation = env.simulatedUserHeadsetOrientation;
             }
         }
-
-        public void LateUpdate()
+        public void LateUpdate() // 20Hz
         {
             if (!_sendReply)
             {
@@ -125,14 +146,12 @@ namespace UserInTheBox
             _tex.ReadPixels(_rect, 0, 0);
             RenderTexture.active = null;
             _previousImage = _tex.EncodeToPNG();
+            AudioSampling();
 
-            // Capture audio data
-            _audioData = new float[_sampleRate];
-            AudioListener.GetOutputData(_audioData, 0);
-
-            // Convert audio data to byte array
-            byte[] audioBytes = new byte[_audioData.Length * sizeof(float)];
-            Buffer.BlockCopy(_audioData, 0, audioBytes, 0, audioBytes.Length);
+            var samples2D = audioManager.m_AudioSensorComponent.Sensor.Buffer.Samples;
+            
+            _audioData = samples2D.Flatten();
+            Debug.Log("Audio data from unity side" + _audioData + "at time " + Time.time);
 
             var reward = env.GetReward();
             var isFinished = env.IsFinished() || _server.GetSimulationState().isFinished;
@@ -140,11 +159,16 @@ namespace UserInTheBox
             var logDict = env.GetLogDict();
 
             // Send observation to client with audio data
-            _server.SendObservation(isFinished, reward, _previousImage, audioBytes, timeFeature, logDict);
+            _server.SendObservation(isFinished, reward, _previousImage, _audioData, timeFeature, logDict);
         }
 
-        private void OnDestroy()
+        public void AudioSampling()
         {
+            audioManager.m_AudioSensorComponent.SampleAudioinSimulatedUser();
+        }
+        private void OnDestroy()
+        {   
+            audioManager.m_AudioSensorComponent.OnDestroy();
             _server?.Close();
         }
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using WhacAMole.Scripts.Audio;
 
 namespace UserInTheBox
 {
@@ -12,6 +13,7 @@ namespace UserInTheBox
         // Create a child class for each game and implement the abstract classes to match the game dynamics.
 
         public SimulatedUser simulatedUser;
+        public AudioManager audioManager;
         public Logger logger;
 
         protected float _reward;
@@ -22,6 +24,13 @@ namespace UserInTheBox
 
         public bool overrideHeadsetOrientation = false;
         public Quaternion simulatedUserHeadsetOrientation;
+
+        public void UpdateAudioSettings()
+        {
+            audioManager.m_AudioSensorComponent.SampleType = audioManager.SampleType == "Amplitude" ? SampleType.Amplitude : SampleType.Spectrum;
+            audioManager.m_AudioSensorComponent.SignalType = audioManager.SignalType == "Mono" ? SignalType.Mono : SignalType.Stereo;
+            audioManager.m_AudioSensorComponent.UpdateSettings();
+        }
 
         public void Start()
         {
@@ -36,6 +45,11 @@ namespace UserInTheBox
 
             InitialiseGame();
             InitialiseReward();
+            if (simulatedUser.audioModeOn)
+            {
+                UpdateAudioSettings();
+            }
+
 
             // Enable logging if necessary
             logger.enabled = _logging;
