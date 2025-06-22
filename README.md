@@ -79,6 +79,16 @@ python uitb/test/evaluator.py simulators/whacamole_constrained_linux_train_4 --r
 ```
 Results are visualized using Weights & Biases.
 
+## 📈 Visualization Tools
+All graphs and plots used in this project were generated using the companion repository:  
+
+👉 [uitb_graphs](https://github.com/Leahh147/uitb_graphs.git)
+
+This includes:  
+
+- Hit rate and reaction time plots
+- Whac-A-Mole spatial performance maps
+
 ## 📎 Related Projects
 
 - [SIM2VR](https://github.com/fl0fischer/sim2vr.git) – Unity-based extension of User-in-the-Box
