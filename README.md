@@ -18,7 +18,7 @@ SIM2SENSE extends the [SIM2VR](https://doi.org/10.1145/3654777.3676452) framewor
 
 ## 🧠 System Architecture
 
-![System Diagram](docs/system_architecture.png)
+![System Diagram](system_architecture.jpg)
 
 1. VR Environment (Unity)  
 2. Sensory Channels (Vision, Proprioception, Audio)  
